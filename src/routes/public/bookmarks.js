@@ -19,11 +19,12 @@ async function valiateLink(link) {
     return error;
 };
 
-//http://127.0.0.1:3010/api/v1/bookmarks?filter=favorites&filter_value=true&filter_from=1&filter_to=5
+//http://localhost:3010/api/v1/bookmarks?filter=favorites&filter_value=true&filter_from=1&filter_to=5
+//curl -X GET -G 'http://localhost:3010/api/v1/bookmarks' -d 'filter=favorites&filter_value=true&filter_from=1&filter_to=5'
 router.get("/", (req, res) => {
     let { limit, offset, sort_by, sort_dir, filter, filter_value, filter_from, filter_to } = req.query;
     let error = undefined;
-
+    
     if (!filter) error = { code: 'BOOKMARKS_INVALID_LINK', description: 'Отсутствует фильтр' };
     if (!filter_value) error = { code: 'BOOKMARKS_INVALID_LINK', description: 'Отсутствует значение фильтра' };
     if (!filter_from || !filter_to) error = { code: 'BOOKMARKS_INVALID_LINK', description: 'Отсутствует параметр фильтрации' };
@@ -40,7 +41,7 @@ router.get("/", (req, res) => {
     models.bookmarks
         .findAndCountAll({
             where: whereValue, attributes: ['guid', 'link', 'createdAt', 'description', 'favorites'], limit, offset,
-            order: [[sort_by, sort_dir]], [Op.gte]: [Number(filter_from)], [Op.lte]: [Number(filter_to)]
+            order: [[sort_by, sort_dir]], [Op.gte]: [filter_from], [Op.lte]: [filter_to]
         })
         .then(result => {
             const { count: length, rows: data } = result;
@@ -51,11 +52,10 @@ router.get("/", (req, res) => {
         })
 });
 
-//curl -d '{"link":"http://vk.ru","description":"это vk","favorites":true}' -H "Content-Type: application/json" -X POST http://localhost:3010/api/bookmarks
+//curl -d '{"link":"http://yahoo.com","description":"это vk","favorites":true}' -H "Content-Type: application/json" -X POST http://localhost:3010/api/v1/bookmarks
 router.post("/", async (req, res) => {
     const { link, description, favorites } = req.body;
-
-    let error = await valiateLink(link);
+    const error = await valiateLink(link);
 
     if (error) return res.status(200).json({ success: false, error });
 
@@ -73,11 +73,10 @@ router.post("/", async (req, res) => {
         })
 });
 
-//curl -d '{"guid":"fecb3b93-bd69-4475-a423-83ab6299e892","link":"http://yahoo.ru","description":"yandex","favorites":true}' -H "Content-Type: application/json" -X PATCH http://localhost:3010/api/bookmarks
+//curl -d '{"guid":"fecb3b93-bd69-4475-a423-83ab6299e892","link":"http://yahoo.com","description":"yandex","favorites":true}' -H "Content-Type: application/json" -X PATCH http://localhost:3010/api/v1/bookmarks
 router.patch("/", async (req, res) => {
     const { guid, link, description, favorites } = req.body;
-
-    let error = await valiateLink(link);
+    const error = await valiateLink(link);
 
     if (error) return res.status(200).json({ success: false, error });
 
@@ -97,7 +96,7 @@ router.patch("/", async (req, res) => {
         .catch(result => res.status(200).json({ success: false, message: 'некорректные параметры' }));
 });
 
-//curl -d '{"guid":"fa30a83a-7c09-4be4-8940-4684fbad34f7"}' -H "Content-Type: application/json" -X DELETE http://localhost:3010/api/bookmarks
+//curl -d '{"guid":"fa30a83a-7c09-4be4-8940-4684fbad34f7"}' -H "Content-Type: application/json" -X DELETE http://localhost:3010/api/v1/bookmarks
 router.delete("/", (req, res) => {
     const { guid } = req.body;
     if (!guid)
