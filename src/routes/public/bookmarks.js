@@ -21,10 +21,30 @@ async function valiateLink(link) {
 
 //http://localhost:3010/api/v1/bookmarks?filter=favorites&filter_value=true&filter_from=1&filter_to=5
 //curl -X GET -G 'http://localhost:3010/api/v1/bookmarks' -d 'filter=favorites&filter_value=true&filter_from=1&filter_to=5'
+//curl -X GET -G 'http://localhost:3010/api/v1/bookmarks' -d 'guid=71bf2da9-9f9e-47b2-9abb-d7d89ad9dd06'
 router.get("/", (req, res) => {
-    let { limit, offset, sort_by, sort_dir, filter, filter_value, filter_from, filter_to } = req.query;
+    let { limit, offset, sort_by, sort_dir } = req.query;
+    const { guid, filter, filter_value, filter_from, filter_to } = req.query;
     let error = undefined;
-    
+    console.log('========================', guid)
+
+    if (guid) {
+        console.log('========================', guid)
+        models.bookmarks
+            .findOne({ where: { guid }, attributes: ['link'] })
+            .then(bookmark => {
+                if (!bookmark)
+                    res.status(404).json({ success: false, message: 'нет закладки с таким ID' })
+                else {
+                    res.status(200).json({
+                        success: true, message: bookmark.link
+                    })
+                }
+            })
+            .catch(result => res.status(200).json({ success: false, message: 'некорректные параметры' }));
+        return
+    };
+
     if (!filter) error = { code: 'BOOKMARKS_INVALID_LINK', description: 'Отсутствует фильтр' };
     if (!filter_value) error = { code: 'BOOKMARKS_INVALID_LINK', description: 'Отсутствует значение фильтра' };
     if (!filter_from || !filter_to) error = { code: 'BOOKMARKS_INVALID_LINK', description: 'Отсутствует параметр фильтрации' };
@@ -45,14 +65,17 @@ router.get("/", (req, res) => {
         })
         .then(result => {
             const { count: length, rows: data } = result;
-            res.status(200).json({ success: true, length, message: '//Всего записей с указанным фильтром в БД (внимание, всего - это без учета лимита пагинации)', data })
+            res.status(200).json({
+                success: true, length, message: '//Всего записей с указанным фильтром в БД (внимание, всего - это без учета лимита пагинации)',
+                data
+            })
         })
         .catch(result => {
             res.status(200).json({ success: false })
         })
 });
 
-//curl -d '{"link":"http://yahoo.com","description":"это vk","favorites":true}' -H "Content-Type: application/json" -X POST http://localhost:3010/api/v1/bookmarks
+//curl -d '{"link":"http://ya.ru","description":"это yandex","favorites":false}' -H "Content-Type: application/json" -X POST http://localhost:3010/api/v1/bookmarks
 router.post("/", async (req, res) => {
     const { link, description, favorites } = req.body;
     const error = await valiateLink(link);
