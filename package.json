@@ -26,7 +26,8 @@
     "sequelize": "^4.37.6",
     "sequelize-cli": "^4.0.0",
     "sqlite3": "^4.0.6",
-    "validate.js": "^0.12.0"
+    "validate.js": "^0.12.0",
+    "xmlhttprequest": "^1.8.0"
   },
   "devDependencies": {
     "apidoc": "^0.17.6",
